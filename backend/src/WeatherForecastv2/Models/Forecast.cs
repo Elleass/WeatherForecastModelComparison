@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace WeatherForecastv2.Models
 {
@@ -21,6 +22,7 @@ namespace WeatherForecastv2.Models
         // WeatherModel relationship - FIXED
         public int WeatherModelId { get; set; }  // Changed from WeatherModelName
         [ForeignKey(nameof(WeatherModelId))]
+        [JsonIgnore]
         public WeatherModel WeatherModel { get; set; } = null!;
 
         public double Temperature2m { get; set; }

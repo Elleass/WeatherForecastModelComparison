@@ -18,6 +18,8 @@ namespace WeatherForecastv2.Data
         public DbSet<WeatherForecastv2.Models.Location> Location { get; set; } = default!;
         public DbSet<WeatherForecastv2.Models.WeatherModel> WeatherModel { get; set; } = default!;
 
+
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

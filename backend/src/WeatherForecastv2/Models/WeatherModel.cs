@@ -1,7 +1,10 @@
-﻿namespace WeatherForecastv2.Models
+﻿using System.Text.Json.Serialization;
+
+namespace WeatherForecastv2.Models
 {
     public class WeatherModel
     {
+
         public int Id { get; set; }
         public string? Name { get; set; }
         public string? Provider { get; set; }
@@ -9,6 +12,8 @@
         public bool IsActive { get; set; } = true;
 
         // Navigation property
+
+        [JsonIgnore]
         public ICollection<Forecast> Forecasts { get; set; } = new List<Forecast>();
     }
 }

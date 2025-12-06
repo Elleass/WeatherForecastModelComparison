@@ -1,6 +1,7 @@
 ﻿using Azure;
 //using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Identity.Client;
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using WeatherForecastv2.Models;
@@ -50,12 +51,14 @@ namespace WeatherForecastv2.Services
             _logger.LogInformation($"Fetching forecast for city: {city}");
 
 
+
+
             //Step 1: Get Coordinates (handles location caching automatically) 
             var (lat, lng) = await _geoService.GetCoordinatesAsync(city);
 
 
             //Step 2: Get location from DB (Should exist after geocoding) 
-
+            _logger.LogInformation("Geo coords for {City}: lat={Lat}, lng={Lng}", city, lat, lng);
 
 
 
@@ -63,8 +66,11 @@ namespace WeatherForecastv2.Services
             if (location == null)
             {
                 throw new InvalidOperationException($"Location should exits after geocdoing the city {city}");
-            }
 
+
+            }
+            _logger.LogInformation("DB coords for {City}: id={Id}, lat={Lat}, lng={Lng}",
+    city, location.Id, location.Latitude, location.Longitude);
 
             //int locationId = location.Id;
 
@@ -101,130 +107,136 @@ namespace WeatherForecastv2.Services
 
         private async Task<List<Forecast>> FetchFromApiAsync(double lat, double lng, int locationId, List<WeatherModel> models)
         {
-            string baseUrl = $"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lng}";
-            string modelsParam = string.Join(",", models.Select(m => m.Name));
-            string fetchUrl = baseUrl + $"&hourly=temperature_2m,apparent_temperature,precipitation,precipitation_probability,wind_speed_10m," +
-                                        $"relative_humidity_2m,surface_pressure,cloud_cover,visibility,uv_index&" +
-                                        $"models={modelsParam}" + "&timezone=auto&forecast_days=3";
+            if (models == null || models.Count == 0)
+                throw new InvalidOperationException("No weather models configured.");
 
-            var response = await _httpClient.GetFromJsonAsync<ForecastApiResponse>(fetchUrl);
-            if (response?.Hourly == null)
-            {
-                throw new Exception("Failed to get weather forecast from openmeteo API");
-            }
-
-            // Convert API response to your Forecast models
+            var latStr = lat.ToString(CultureInfo.InvariantCulture);
+            var lngStr = lng.ToString(CultureInfo.InvariantCulture);
             var forecasts = new List<Forecast>();
-            var hourlyData = response.Hourly;
             var fetchTime = DateTime.UtcNow;
 
             foreach (var model in models)
             {
-                var modelName = model.Name; //  e.g., "ecmwf_ifs025", "gfs025"
+                var modelName = model.Name?.Trim();
+                if (string.IsNullOrWhiteSpace(modelName))
+                    continue;
 
-                var modelData = ExtractModelData(hourlyData, modelName);
+                var fetchUrl =
+                    $"https://api.open-meteo.com/v1/forecast?latitude={latStr}&longitude={lngStr}" +
+                    "&hourly=temperature_2m,apparent_temperature,precipitation,precipitation_probability," +
+                    "wind_speed_10m,relative_humidity_2m,surface_pressure,cloud_cover,visibility,uv_index" +
+                    $"&models={modelName}&timezone=auto&forecast_days=3";
 
-                if (modelData.Temperature2m.Count == 0)
+                _logger.LogInformation("Calling Open-Meteo: {Url}", fetchUrl);
+
+                using var response = await _httpClient.GetAsync(fetchUrl, HttpCompletionOption.ResponseHeadersRead);
+                var body = await response.Content.ReadAsStringAsync();
+                if (!response.IsSuccessStatusCode)
                 {
-                    _logger.LogWarning($"No data found for model: {modelName}");
+                    _logger.LogError("Open-Meteo failed. Status: {Status}. Body: {Body}", response.StatusCode, body);
+                    throw new HttpRequestException($"Open-Meteo request failed: {(int)response.StatusCode} {response.ReasonPhrase}. Body: {body}");
+                }
+
+                var payload = JsonSerializer.Deserialize<ForecastApiResponse>(
+                    body, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (payload?.Hourly == null)
+                    throw new Exception("Open-Meteo response missing hourly data.");
+
+                var hourlyData = payload.Hourly;
+                var modelData = ExtractModelData(hourlyData); // no suffixes now
+
+                double GetD(List<double> list, int i)
+                {
+                    if (i < list.Count && double.IsFinite(list[i])) return list[i];
+                    return 0; // choose your fallback, or skip the row if you prefer
+                }
+
+                int GetI(List<int> list, int i)
+                {
+                    if (i < list.Count) return list[i];
+                    return 0; // fallback
+                }
+
+                // Minimal guard: rely on Time + Temperature2m
+                int count = Math.Min(hourlyData.Time.Count, modelData.Temperature2m.Count);
+                if (count == 0)
+                {
+                    _logger.LogWarning("Insufficient data to build forecasts for model: {Model}", modelName);
                     continue;
                 }
 
-                for (int i = 0; i < hourlyData.Time.Count && i < modelData.Temperature2m.Count; i++)
+                for (int i = 0; i < count; i++)
                 {
-                    var forecast = new Forecast
+                    forecasts.Add(new Forecast
                     {
                         LocationId = locationId,
                         FetchDate = fetchTime,
                         ValidDate = DateTime.Parse(hourlyData.Time[i]),
-                        WeatherModelId = model.Id,  // FIXED: Use model.Id instead of modelName
-                        Temperature2m = modelData.Temperature2m[i],
-                        ApparentTemperature = modelData.ApparentTemperature[i],
-                        Precipitation = modelData.Precipitation[i],
-                        PrecipitationProbability = modelData.PrecipitationProbability[i],
-                        WindSpeed10m = modelData.WindSpeed10m[i],
-                        Humidity2m = modelData.RelativeHumidity2m[i],
-                        PressureSurface = modelData.SurfacePressure[i],
-                        CloudCover = modelData.CloudCover[i],
-                        Visibility = modelData.Visibility[i],
-                        UvIndex = modelData.UvIndex[i]
-                    };
-
-                    forecasts.Add(forecast);
+                        WeatherModelId = model.Id,
+                        Temperature2m = GetD(modelData.Temperature2m, i),
+                        ApparentTemperature = GetD(modelData.ApparentTemperature, i),
+                        Precipitation = GetD(modelData.Precipitation, i),
+                        PrecipitationProbability = GetI(modelData.PrecipitationProbability, i),
+                        WindSpeed10m = GetD(modelData.WindSpeed10m, i),
+                        Humidity2m = GetD(modelData.RelativeHumidity2m, i),
+                        PressureSurface = GetD(modelData.SurfacePressure, i),
+                        CloudCover = GetI(modelData.CloudCover, i),
+                        Visibility = GetD(modelData.Visibility, i),
+                        UvIndex = GetI(modelData.UvIndex, i)
+                    });
                 }
             }
 
             return forecasts;
         }
-        //helper method to extract model-specific data
-        private ModelSpecificData ExtractModelData(HourlyData hourlyData, string modelName)
+
+        private ModelSpecificData ExtractModelData(HourlyData hourlyData)
         {
-            var modelData = new ModelSpecificData();
-
-            var tempField = $"temperature_2m_{modelName}";
-            var apparentTempField = $"apparent_temperature_{modelName}";
-            var precipField = $"precipitation_{modelName}";
-            var precipProbField = $"precipitation_probability_{modelName}";
-            var windField = $"wind_speed_10m_{modelName}";
-            var humidityField = $"relative_humidity_2m_{modelName}";
-            var pressureField = $"surface_pressure_{modelName}";
-            var cloudField = $"cloud_cover_{modelName}";
-            var visibilityField = $"visibility_{modelName}";
-            var uvField = $"uv_index_{modelName}";
-
-
-            modelData.Temperature2m = ExtractDoubleArray(hourlyData, tempField);
-            modelData.ApparentTemperature = ExtractDoubleArray(hourlyData, apparentTempField);
-            modelData.Precipitation = ExtractDoubleArray(hourlyData, precipField);
-            modelData.PrecipitationProbability = ExtractIntArray(hourlyData, precipProbField);
-            modelData.WindSpeed10m = ExtractDoubleArray(hourlyData, windField);
-            modelData.RelativeHumidity2m = ExtractDoubleArray(hourlyData, humidityField);
-            modelData.SurfacePressure = ExtractDoubleArray(hourlyData, pressureField);
-            modelData.CloudCover = ExtractIntArray(hourlyData, cloudField);
-            modelData.Visibility = ExtractDoubleArray(hourlyData, visibilityField);
-            modelData.UvIndex = ExtractIntArray(hourlyData, uvField);
-
-            return modelData;
-
-
+            return new ModelSpecificData
+            {
+                Temperature2m = ExtractDoubleArray(hourlyData, "temperature_2m"),
+                ApparentTemperature = ExtractDoubleArray(hourlyData, "apparent_temperature"),
+                Precipitation = ExtractDoubleArray(hourlyData, "precipitation"),
+                PrecipitationProbability = ExtractIntArray(hourlyData, "precipitation_probability"),
+                WindSpeed10m = ExtractDoubleArray(hourlyData, "wind_speed_10m"),
+                RelativeHumidity2m = ExtractDoubleArray(hourlyData, "relative_humidity_2m"),
+                SurfacePressure = ExtractDoubleArray(hourlyData, "surface_pressure"),
+                CloudCover = ExtractIntArray(hourlyData, "cloud_cover"),
+                Visibility = ExtractDoubleArray(hourlyData, "visibility"),
+                UvIndex = ExtractIntArray(hourlyData, "uv_index")
+            };
         }
-
         private List<double> ExtractDoubleArray(HourlyData hourlyData, string fieldName)
         {
-            if (hourlyData.AdditionalData.TryGetValue(fieldName, out var jsonElement))
+            if (hourlyData.AdditionalData.TryGetValue(fieldName, out var jsonElement) &&
+                jsonElement.ValueKind == JsonValueKind.Array)
             {
-                try
+                var list = new List<double>();
+                foreach (var el in jsonElement.EnumerateArray())
                 {
-                    return jsonElement.EnumerateArray()
-                        .Select(x => x.GetDouble())
-                        .ToList();
+                    if (el.ValueKind == JsonValueKind.Number && el.TryGetDouble(out var v))
+                        list.Add(v);
+                    // skip null/other kinds
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning("Failed to parse {FieldName}: {Error}", fieldName, ex.Message);
-                }
+                return list;
             }
-
             return new List<double>();
         }
 
-
         private List<int> ExtractIntArray(HourlyData hourlyData, string fieldName)
         {
-            if (hourlyData.AdditionalData.TryGetValue(fieldName, out var jsonElement))
+            if (hourlyData.AdditionalData.TryGetValue(fieldName, out var jsonElement) &&
+                jsonElement.ValueKind == JsonValueKind.Array)
             {
-                try
+                var list = new List<int>();
+                foreach (var el in jsonElement.EnumerateArray())
                 {
-                    return jsonElement.EnumerateArray()
-                        .Select(x => x.GetInt32())
-                        .ToList();
+                    if (el.ValueKind == JsonValueKind.Number && el.TryGetInt32(out var v))
+                        list.Add(v);
+                    // skip null/other kinds
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning("Failed to parse {FieldName}: {Error}", fieldName, ex.Message);
-                }
+                return list;
             }
-
             return new List<int>();
         }
 
@@ -247,7 +259,7 @@ namespace WeatherForecastv2.Services
 
     public class ForecastApiResponse
     {
-        public HourlyData Hourly { get; set; }
+        public HourlyData ?Hourly { get; set; }
     }
 
     public class HourlyData

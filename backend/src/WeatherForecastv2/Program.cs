@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using WeatherForecastv2.Data;
+using WeatherForecastv2.Models;
 using WeatherForecastv2.Repositories;
 using WeatherForecastv2.Services;
 
@@ -37,8 +38,15 @@ namespace WeatherForecastv2
             // Seed the database
             using (var scope = app.Services.CreateScope())
             {
-                var context = scope.ServiceProvider.GetRequiredService<WeatherForecastContext>();
-                context.Database.EnsureCreated();
+                var db = scope.ServiceProvider.GetRequiredService<WeatherForecastContext>();
+                if (!db.WeatherModel.Any())
+                {
+                    db.WeatherModel.AddRange(
+                        new WeatherModel { Name = "ecmwf_ifs025", Provider = "ECMWF", IsActive = true, CreatedAt = DateTime.UtcNow },
+                        new WeatherModel { Name = "icon_eu", Provider = "DVD", IsActive = true, CreatedAt = DateTime.UtcNow }
+                    );
+                    db.SaveChanges();
+                }
             }
 
             // Configure the HTTP request pipeline.
