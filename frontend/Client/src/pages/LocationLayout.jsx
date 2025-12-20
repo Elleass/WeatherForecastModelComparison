@@ -1,108 +1,57 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-
-function useCityFromPath() {
-  const { city } = useParams(); // requires your route to define :city
-  return city ?? null;
-}
-
-function Search({ city }) {
-  const [data, setData] = useState(null);
-  const [err, setErr] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!city) return;
-    const apiUrl = `/api/location/${encodeURIComponent(city)}`; // note leading /
-    let mounted = true;
-    const controller = new AbortController();
-
-    (async () => {
-      setLoading(true);
-      setErr(null);
-      try {
-        const res = await fetch(apiUrl, {
-          headers: { Accept: 'application/json' },
-          signal: controller.signal,
-        });
-        if (!res.ok) {
-          const text = await res.text().catch(() => res.statusText);
-          throw new Error(`HTTP ${res.status}: ${text}`);
-        }
-        const json = await res.json();
-        if (mounted) setData(json);
-      } catch (e) {
-        if (mounted && e.name !== 'AbortError') setErr(e.message);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    })();
-
-    return () => {
-      mounted = false;
-      controller.abort();
-    };
-  }, [city]);
-
-  return (
-    <section>
-      <h2>Location lookup</h2>
-      {loading && <div>Loading…</div>}
-      {err && <div style={{ color: 'crimson' }}>Error: {err}</div>}
-      {data && <pre>{JSON.stringify(data, null, 2)}</pre>}
-    </section>
-  );
-}
-
-function FetchForecast({ city }) {
-  const [data, setData] = useState(null);
-  const [err, setErr] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!city) return;
-    const apiUrl = `/api/forecast/${encodeURIComponent(city)}`; // note leading /
-    console.log(apiUrl);
-    // const apiUrl = `/api/forecast/Kraków`;
-    let mounted = true;
-    const controller = new AbortController();
-
-    (async () => {
-      setLoading(true);
-      setErr(null);
-      try {
-        const res = await fetch(apiUrl, {
-          headers: { Accept: 'application/json' },
-          signal: controller.signal,
-        });
-        if (!res.ok) {
-          const text = await res.text().catch(() => res.statusText);
-          throw new Error(`HTTP ${res.status}: ${text}`);
-        }
-        const json = await res.json();
-        if (mounted) setData(json);
-      } catch (e) {
-        if (mounted && e.name !== 'AbortError') setErr(e.message);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    })();
-
-    return () => {
-      mounted = false;
-      controller.abort();
-    };
-  }, [city]);
-
-  return data;
-}
+import { useForecast } from '../hooks/useForecast';
+import { useLocation } from '../hooks/useLocation';
+import { useWeatherModels } from '../hooks/useWeatherModels';
+import { ForecastChartSection } from '../components/ForecastChartSection';
+import MultiModelSelector from '../components/MultiModelSelector';
 
 export default function LocationLayout() {
-  const city = useCityFromPath();
+  const {
+    city,
+    data: locationData,
+    err: errLocation,
+    loading: loadingLocation,
+  } = useLocation();
+
+  const {
+    data: forecastData = [],
+    err: errForecast,
+    loading: loadingForecast,
+  } = useForecast();
+
+  const {
+    models: modelList,
+    loading: modelListLoading,
+    err: modelListError,
+  } = useWeatherModels();
+
+  if (!city) return <div>No city in path</div>;
+
   return (
     <main>
-      <Search city={city} />
-      <FetchForecast city={city} />
+      <h1>Location: {city}</h1>
+      <h3>Coordinates: {locationData ? `${locationData.lat}, ${locationData.lng}` : '—'}</h3>
+
+      {loadingLocation && <div>Loading location…</div>}
+      {errLocation && <div style={{ color: 'crimson' }}>{errLocation}</div>}
+
+      {loadingForecast && <div>Loading forecast…</div>}
+      {errForecast && <div style={{ color: 'crimson' }}>{errForecast}</div>}
+
+      {modelListLoading && <div>Loading models…</div>}
+      {modelListError && <div style={{ color: 'crimson' }}>{modelListError}</div>}
+
+      <ForecastChartSection
+        forecastData={forecastData}
+        fallbackModels={modelList}
+      />
+      <MultiModelSelector/>
+
+            <MultiModelSelector
+        forecastData={forecastData}
+        models={modelList}
+      />
+
+
     </main>
   );
 }

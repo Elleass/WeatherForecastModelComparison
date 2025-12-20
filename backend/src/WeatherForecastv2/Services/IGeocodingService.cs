@@ -59,7 +59,9 @@ namespace WeatherForecastv2.Services
 
                 throw new Exception($"Coordinates not found for the given city: {city}");
             }
-            return (location.Latitude, location.Longitude);
+
+
+            return (Math.Round(location.Latitude, 2), Math.Round(location.Longitude, 2));
         }
 
         // Models for the Open-Meteo response

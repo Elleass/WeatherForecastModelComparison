@@ -26,6 +26,7 @@ namespace WeatherForecastv2.Services
 
         //Cache duration - 6 hours ===== TO VERIFY LATER ======
         private readonly TimeSpan _cacheValidityPeriod = TimeSpan.FromHours(6);
+
         public FetchForecast(
             IGeocodingService geoService,
             HttpClient httpClient,
@@ -46,62 +47,45 @@ namespace WeatherForecastv2.Services
 
         public async Task<List<Forecast>> FetchForecastAsync(string city)
         {
-
-
             _logger.LogInformation($"Fetching forecast for city: {city}");
 
+            //Step 1: Get Coordinates (handles location caching automatically)
+            var (latRaw, lngRaw) = await _geoService.GetCoordinatesAsync(city);
+            var lat = Math.Round(latRaw, 5);
+            var lng = Math.Round(lngRaw, 5);
 
-
-
-            //Step 1: Get Coordinates (handles location caching automatically) 
-            var (lat, lng) = await _geoService.GetCoordinatesAsync(city);
-
-
-            //Step 2: Get location from DB (Should exist after geocoding) 
+            //Step 2: Get location from DB (Should exist after geocoding)
             _logger.LogInformation("Geo coords for {City}: lat={Lat}, lng={Lng}", city, lat, lng);
-
-
 
             var location = await _locationRepository.GetByCityNameAsync(city);
             if (location == null)
             {
                 throw new InvalidOperationException($"Location should exits after geocdoing the city {city}");
-
-
             }
             _logger.LogInformation("DB coords for {City}: id={Id}, lat={Lat}, lng={Lng}",
-    city, location.Id, location.Latitude, location.Longitude);
-
-            //int locationId = location.Id;
-
+                city, location.Id, location.Latitude, location.Longitude);
 
             //Step 3: Check if we have recent forecast (Fetched to 6hours ago)
-
             var cutoffTime = DateTime.UtcNow.Subtract(_cacheValidityPeriod); //check out later how this work
             var hasRecentForecast = await _forecastRepository.HasRecentForecastAsync(location.Id, cutoffTime);
 
             if (hasRecentForecast)
             {
                 _logger.LogInformation($"Using cached forecast data for location {location.Id}");
-                return await _forecastRepository.GetRecentForecastAsync(location.Id, cutoffTime);
+                var cached = await _forecastRepository.GetRecentForecastAsync(location.Id, cutoffTime);
+                return RoundForecasts(cached);
             }
 
             //Step 4: Fetch fresh data from openmeteo API
-
             _logger.LogInformation($"Fetching fresh forecast data from openmeteo API for location: {location.Id}");
 
             var models = await _modelRepository.GetModelsAsync();
             var freshForecast = await FetchFromApiAsync(lat, lng, location.Id, models);
 
-
-
             //Step 5: Save to database for future caching
-
-
             await _forecastRepository.SaveForecastAsync(freshForecast);
 
-            return freshForecast;
-
+            return RoundForecasts(freshForecast);
         }
 
 
@@ -173,20 +157,41 @@ namespace WeatherForecastv2.Services
                         FetchDate = fetchTime,
                         ValidDate = DateTime.Parse(hourlyData.Time[i]),
                         WeatherModelId = model.Id,
-                        Temperature2m = GetD(modelData.Temperature2m, i),
-                        ApparentTemperature = GetD(modelData.ApparentTemperature, i),
-                        Precipitation = GetD(modelData.Precipitation, i),
+                        Temperature2m = Math.Round(GetD(modelData.Temperature2m, i), 1),
+                        ApparentTemperature = Math.Round(GetD(modelData.ApparentTemperature, i), 1),
+                        Precipitation = Math.Round(GetD(modelData.Precipitation, i), 1),
                         PrecipitationProbability = GetI(modelData.PrecipitationProbability, i),
-                        WindSpeed10m = GetD(modelData.WindSpeed10m, i),
-                        Humidity2m = GetD(modelData.RelativeHumidity2m, i),
-                        PressureSurface = GetD(modelData.SurfacePressure, i),
+                        WindSpeed10m = Math.Round(GetD(modelData.WindSpeed10m, i), 1),
+                        Humidity2m = Math.Round(GetD(modelData.RelativeHumidity2m, i), 0),
+                        PressureSurface = Math.Round(GetD(modelData.SurfacePressure, i), 1),
                         CloudCover = GetI(modelData.CloudCover, i),
-                        Visibility = GetD(modelData.Visibility, i),
+                        Visibility = Math.Round(GetD(modelData.Visibility, i), 1),
                         UvIndex = GetI(modelData.UvIndex, i)
                     });
                 }
             }
 
+            return forecasts;
+        }
+
+        private List<Forecast> RoundForecasts(List<Forecast> forecasts)
+        {
+            foreach (var f in forecasts)
+            {
+                f.Temperature2m = Math.Round(f.Temperature2m, 1);
+                f.ApparentTemperature = Math.Round(f.ApparentTemperature, 1);
+                f.Precipitation = Math.Round(f.Precipitation, 1);
+                f.WindSpeed10m = Math.Round(f.WindSpeed10m, 1);
+                f.Humidity2m = Math.Round(f.Humidity2m, 0);
+                f.PressureSurface = Math.Round(f.PressureSurface, 1);
+                f.Visibility = Math.Round(f.Visibility, 1);
+
+                if (f.Location != null)
+                {
+                    f.Location.Latitude = Math.Round(f.Location.Latitude, 5);
+                    f.Location.Longitude = Math.Round(f.Location.Longitude, 5);
+                }
+            }
             return forecasts;
         }
 
@@ -246,7 +251,7 @@ namespace WeatherForecastv2.Services
             public List<double> ApparentTemperature { get; set; } = new List<double>();
             public List<double> Precipitation { get; set; } = new List<double>();
             public List<int> PrecipitationProbability { get; set; } = new List<int>();
-            public List<double> WindSpeed10m { get; set; } = new List<double>();
+            public List<double> WindSpeed10m { get; set;} = new List<double>();
             public List<double> RelativeHumidity2m { get; set; } = new List<double>();
             public List<double> SurfacePressure { get; set; } = new List<double>();
             public List<int> CloudCover { get; set; } = new List<int>();
@@ -255,11 +260,9 @@ namespace WeatherForecastv2.Services
         }
     }
 
-
-
     public class ForecastApiResponse
     {
-        public HourlyData ?Hourly { get; set; }
+        public HourlyData? Hourly { get; set; }
     }
 
     public class HourlyData
@@ -268,7 +271,5 @@ namespace WeatherForecastv2.Services
 
         [JsonExtensionData]
         public Dictionary<string, JsonElement> AdditionalData { get; set; } = new Dictionary<string, JsonElement>();
-
-  
     }
 }

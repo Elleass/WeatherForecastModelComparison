@@ -40,11 +40,11 @@ namespace WeatherForecastv2.Data
             // Configure decimal precision
             modelBuilder.Entity<Location>()
                 .Property(l => l.Latitude)
-                .HasPrecision(10, 7);
+                .HasPrecision(10, 3);
 
             modelBuilder.Entity<Location>()
                 .Property(l => l.Longitude)
-                .HasPrecision(10, 7);
+                .HasPrecision(10, 3);
 
             // Configure forecast decimal properties
             modelBuilder.Entity<Forecast>()
