@@ -3,7 +3,7 @@ import { FORECAST_SERIES } from './chartConfig';
 
 export function toChartData(data = []) {
   return data.map(d => {
-    const row = { time: dayjs(d.validDate).format('HH:mm') };
+    const row = { time: dayjs(d.validDate).format('DD.MM HH:mm') };
     FORECAST_SERIES.forEach(s => {
       // map API field names to your keys
       switch (s.key) {

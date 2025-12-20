@@ -42,8 +42,16 @@ namespace WeatherForecastv2
                 if (!db.WeatherModel.Any())
                 {
                     db.WeatherModel.AddRange(
-                        new WeatherModel { Name = "ecmwf_ifs025", Provider = "ECMWF", IsActive = true, CreatedAt = DateTime.UtcNow },
-                        new WeatherModel { Name = "icon_eu", Provider = "DVD", IsActive = true, CreatedAt = DateTime.UtcNow }
+new WeatherModel { Name = "ecmwf_ifs025", Provider = "ECMWF", IsActive = true, CreatedAt = DateTime.UtcNow },
+
+new WeatherModel { Name = "icon_global", Provider = "DWD", IsActive = true, CreatedAt = DateTime.UtcNow },
+new WeatherModel { Name = "icon_eu", Provider = "DWD", IsActive = true, CreatedAt = DateTime.UtcNow },
+new WeatherModel { Name = "icon_d2", Provider = "DWD", IsActive = true, CreatedAt = DateTime.UtcNow },
+
+new WeatherModel { Name = "gfs_global", Provider = "NOAA", IsActive = true, CreatedAt = DateTime.UtcNow },
+
+new WeatherModel { Name = "arpege_europe", Provider = "MeteoFrance", IsActive = true, CreatedAt = DateTime.UtcNow }
+
                     );
                     db.SaveChanges();
                 }

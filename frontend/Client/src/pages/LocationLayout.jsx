@@ -1,8 +1,9 @@
+import { useMemo } from 'react';
 import { useForecast } from '../hooks/useForecast';
 import { useLocation } from '../hooks/useLocation';
 import { useWeatherModels } from '../hooks/useWeatherModels';
 import { ForecastChartSection } from '../components/ForecastChartSection';
-import MultiModelSelector from '../components/MultiModelSelector';
+import ModelComparisonSection from '../components/ModelComparisonSection';
 
 export default function LocationLayout() {
   const {
@@ -24,6 +25,19 @@ export default function LocationLayout() {
     err: modelListError,
   } = useWeatherModels();
 
+  // Prefer API-provided models; fallback to extracting id/name from forecastData
+  const models = useMemo(() => {
+    if (Array.isArray(modelList) && modelList.length) return modelList;
+    return Array.from(
+      new Map(
+        (forecastData || []).map(f => [
+          f.weatherModelId,
+          f.weatherModel?.name ?? String(f.weatherModelId),
+        ])
+      ).entries()
+    ).map(([id, name]) => ({ id, name }));
+  }, [modelList, forecastData]);
+
   if (!city) return <div>No city in path</div>;
 
   return (
@@ -42,16 +56,13 @@ export default function LocationLayout() {
 
       <ForecastChartSection
         forecastData={forecastData}
-        fallbackModels={modelList}
+        fallbackModels={models}
       />
-      <MultiModelSelector/>
 
-            <MultiModelSelector
+      <ModelComparisonSection
         forecastData={forecastData}
-        models={modelList}
+        models={models}
       />
-
-
     </main>
   );
 }
