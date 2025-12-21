@@ -94,6 +94,7 @@ export default function Chart({ data = [] }) {
         selectedKeys={visible}
         onToggle={handleToggle}
       />
+      <div class="chart-container">
 
       <div style={{ width: '100%', height: 320, minWidth: 0 }}>
         <ResponsiveContainer width="100%" height="100%">
@@ -137,6 +138,8 @@ export default function Chart({ data = [] }) {
           </LineChart>
         </ResponsiveContainer>
       </div>
+          </div>
+
     </>
   );
 }

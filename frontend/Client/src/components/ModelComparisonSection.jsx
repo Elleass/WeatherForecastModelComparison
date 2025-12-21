@@ -152,26 +152,31 @@ export default function ModelComparisonSection({ forecastData = [], models = [] 
         selectedKeys={visibleSeries}
         onToggle={toggleSeries}
       />
+      <div className="comparison-chart-container">
 
-      {selectedModelIds.length === 0 && <div>No models selected</div>}
 
-      {selectedModelIds.map(modelId => {
-        const series = seriesByModel.get(modelId) || [];
-        const title = modelsById[modelId]?.name ?? `Model ${modelId}`;
-        return (
-          <ModelComparisonChart
-            key={modelId}
-            data={series}
-            visibleKeys={visibleSeries}
-            title={title}
-            leftDomainTicks={leftDomainTicks}
-            rightDomainTicks={rightDomainTicks}
-            leftUnit={leftUnit}
-            rightUnit={rightUnit}
-            syncId={SYNC_ID}
-          />
-        );
-      })}
+        {selectedModelIds.length === 0 && <div>No models selected</div>}
+
+        {selectedModelIds.map(modelId => {
+          const series = seriesByModel.get(modelId) || [];
+          const title = modelsById[modelId]?.name ?? `Model ${modelId}`;
+          return (
+
+            <ModelComparisonChart
+              key={modelId}
+              data={series}
+              visibleKeys={visibleSeries}
+              title={title}
+              leftDomainTicks={leftDomainTicks}
+              rightDomainTicks={rightDomainTicks}
+              leftUnit={leftUnit}
+              rightUnit={rightUnit}
+              syncId={SYNC_ID}
+            />
+          );
+        })}
+      </div>
+
     </section>
   );
 }

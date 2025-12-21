@@ -4,7 +4,7 @@ import { useLocation } from '../hooks/useLocation';
 import { useWeatherModels } from '../hooks/useWeatherModels';
 import { ForecastChartSection } from '../components/ForecastChartSection';
 import ModelComparisonSection from '../components/ModelComparisonSection';
-
+import '../App.css'
 export default function LocationLayout() {
   const {
     city,
@@ -42,6 +42,8 @@ export default function LocationLayout() {
 
   return (
     <main>
+          <hero >
+
       <h1>Location: {city}</h1>
       <h3>Coordinates: {locationData ? `${locationData.lat}, ${locationData.lng}` : '—'}</h3>
 
@@ -54,15 +56,20 @@ export default function LocationLayout() {
       {modelListLoading && <div>Loading models…</div>}
       {modelListError && <div style={{ color: 'crimson' }}>{modelListError}</div>}
 
+<div class="forecast-chart-section">
       <ForecastChartSection
         forecastData={forecastData}
         fallbackModels={models}
       />
+    </div>
 
+    </hero>
+<div class="model-comparison-container">
       <ModelComparisonSection
         forecastData={forecastData}
         models={models}
       />
+      </div>
     </main>
   );
 }
