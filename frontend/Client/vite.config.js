@@ -6,7 +6,8 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:5189',
+        // target: 'http://localhost:5189',
+        target: 'http://192.168.0.184:5000',
         changeOrigin: true,
         secure: false,
         // remove rewrite so /api stays intact when forwarded

@@ -6,6 +6,8 @@ import App from './App.jsx';
 import Home from './pages/Home.jsx';
 import LocationLayout from './pages/LocationLayout.jsx';
 
+
+
 const container = document.getElementById('root');
 
 
