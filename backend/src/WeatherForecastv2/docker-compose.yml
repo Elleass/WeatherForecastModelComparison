@@ -1,0 +1,27 @@
+﻿version: "3.9"
+
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: weather-db
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "StrongPassword123!"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sql_data:/var/opt/mssql
+
+  api:
+    image: weather-api
+    container_name: weather-api
+    depends_on:
+      - db
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__WeatherForecastContext: "Server=db;Database=WeatherForecast;User Id=sa;Password=StrongPassword123!;TrustServerCertificate=true"
+    ports:
+      - "5000:5000"
+
+volumes:
+  sql_data:
