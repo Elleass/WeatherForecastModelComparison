@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using WeatherForecastv2.Repositories;
 using WeatherForecastv2.Services;
 
@@ -16,7 +17,7 @@ namespace WeatherForecastv2.Controllers
             _locations = locations;
         }
 
-
+        [EnableRateLimiting("external")]
         [HttpGet("{city}")]
         public async Task<IActionResult> GetCityBy(string city)
         {

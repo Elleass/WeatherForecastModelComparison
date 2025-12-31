@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using WeatherForecastv2.Services;
-
 [ApiController]
 [Route("api/forecast")]
 public class ForecastController : ControllerBase
@@ -11,7 +11,7 @@ public class ForecastController : ControllerBase
     {
         _forecastService = forecastService;
     }
-
+    [EnableRateLimiting("external")]
     [HttpGet("{city}")]
     public async Task<IActionResult> GetForecast(string city)
     {
