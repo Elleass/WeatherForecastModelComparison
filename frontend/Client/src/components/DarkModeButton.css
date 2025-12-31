@@ -1,0 +1,51 @@
+.dark-mode-button-container {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 10;
+}
+
+.toggle-dark-mode {
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.toggle-dark-mode:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.toggle-dark-mode:focus-visible {
+  outline: 2px solid #646cff;
+  outline-offset: 2px;
+}
+
+/* SVG icon */
+.icon {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+/* Theme-based color */
+.app.light .icon {
+  color: #111;
+}
+
+.app.dark .icon {
+  color: #fff;
+}
+
+/* Optional animation */
+.app.dark .icon {
+  transform: rotate(180deg);
+}

@@ -6,13 +6,15 @@ import App from './App.jsx';
 import Home from './pages/Home.jsx';
 import LocationLayout from './pages/LocationLayout.jsx';
 
-
+import { ThemeProvider } from "./ThemeContext";
 
 const container = document.getElementById('root');
 
 
 createRoot(container).render(
   <StrictMode>
+            <ThemeProvider>
+
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
@@ -23,5 +25,7 @@ createRoot(container).render(
         </Route>
       </Routes>
     </BrowserRouter>
+      </ThemeProvider>
+
   </StrictMode>
 );

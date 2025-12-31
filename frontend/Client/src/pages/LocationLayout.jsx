@@ -5,6 +5,7 @@ import { useWeatherModels } from '../hooks/useWeatherModels';
 import { ForecastChartSection } from '../components/ForecastChartSection';
 import ModelComparisonSection from '../components/ModelComparisonSection';
 import SearchBar from '../components/SearchBar';
+import DarkModeButton from '../components/DarkModeButton';
 
 import '../App.css'
 export default function LocationLayout() {
@@ -45,6 +46,7 @@ export default function LocationLayout() {
   return (
     <main>
           <div className="forecast-hero">
+            <DarkModeButton />
             <SearchBar/>
 
       <h1>Location: {city}</h1>
@@ -74,6 +76,8 @@ export default function LocationLayout() {
       />
       </div>
       <div className="background-texture"></div>
+            <div className="background-texture-color"></div>
+
     </main>
   );
 }

@@ -1,5 +1,6 @@
 export function ModelSelector({ models, selected, onChange, disabled }) {
   return (
+    <div className="type-selector-container">
     <label>
       Model:{' '}
       <select
@@ -14,5 +15,6 @@ export function ModelSelector({ models, selected, onChange, disabled }) {
         ))}
       </select>
     </label>
+    </div>
   );
 }
