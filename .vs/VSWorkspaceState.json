@@ -4,11 +4,9 @@
     "\\backend",
     "\\backend\\src",
     "\\backend\\src\\WeatherForecastv2",
-    "\\backend\\src\\WeatherForecastv2\\Controllers",
     "\\backend\\src\\WeatherForecastv2\\Data",
-    "\\backend\\src\\WeatherForecastv2\\Models",
-    "\\frontend"
+    "\\backend\\src\\WeatherForecastv2\\Models"
   ],
-  "SelectedNode": "\\backend\\src\\WeatherForecastv2\\Models\\Location.cs",
+  "SelectedNode": "\\backend\\src\\WeatherForecastv2\\Dockerfile",
   "PreviewInSolutionExplorer": false
 }
