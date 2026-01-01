@@ -84,7 +84,7 @@ namespace WeatherForecastv2.Services
         // Models for the Open-Meteo response
         public class OpenMeteoResponse
         {
-            public List<OpenMeteoResult> ?Results { get; set; }
+            public List<OpenMeteoResult>? Results { get; set; }
         }
 
         public class OpenMeteoResult

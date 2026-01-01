@@ -18,7 +18,7 @@ namespace WeatherForecastv2.Models
 
                 if (context.WeatherModel.Any())
                 {
-                    return; 
+                    return;
                 }
 
                 context.WeatherModel.AddRange(

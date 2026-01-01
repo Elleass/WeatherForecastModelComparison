@@ -1,7 +1,4 @@
-﻿using Azure;
-//using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.Identity.Client;
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using WeatherForecastv2.Models;
@@ -57,7 +54,7 @@ namespace WeatherForecastv2.Services
             {
                 return null;
             }
-            var (latRaw, lngRaw) = coords.Value; 
+            var (latRaw, lngRaw) = coords.Value;
             var lat = Math.Round(latRaw, 5);
             var lng = Math.Round(lngRaw, 5);
 
@@ -258,7 +255,7 @@ namespace WeatherForecastv2.Services
             public List<double> ApparentTemperature { get; set; } = new List<double>();
             public List<double> Precipitation { get; set; } = new List<double>();
             public List<int> PrecipitationProbability { get; set; } = new List<int>();
-            public List<double> WindSpeed10m { get; set;} = new List<double>();
+            public List<double> WindSpeed10m { get; set; } = new List<double>();
             public List<double> RelativeHumidity2m { get; set; } = new List<double>();
             public List<double> SurfacePressure { get; set; } = new List<double>();
             public List<int> CloudCover { get; set; } = new List<int>();

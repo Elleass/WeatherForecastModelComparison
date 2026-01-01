@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.CodeAnalysis.Elfie.Model.Strings;
 using WeatherForecastv2.Repositories;
 using WeatherForecastv2.Services;
 
@@ -25,7 +24,7 @@ namespace WeatherForecastv2.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllAsync()
         {
-            var models = await _weatherModel.GetModelsAsync(); 
+            var models = await _weatherModel.GetModelsAsync();
             return Ok(models);
         }
         [EnableRateLimiting("external")]
