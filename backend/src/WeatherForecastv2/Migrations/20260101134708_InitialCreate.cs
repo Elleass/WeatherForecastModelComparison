@@ -15,11 +15,11 @@ namespace WeatherForecastv2.Migrations
                 name: "Location",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Latitude = table.Column<double>(type: "float(10)", precision: 10, scale: 7, nullable: false),
-                    Longitude = table.Column<double>(type: "float(10)", precision: 10, scale: 7, nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Name = table.Column<string>(type: "TEXT", nullable: true),
+                    Latitude = table.Column<double>(type: "REAL", precision: 10, scale: 3, nullable: false),
+                    Longitude = table.Column<double>(type: "REAL", precision: 10, scale: 3, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -30,12 +30,12 @@ namespace WeatherForecastv2.Migrations
                 name: "WeatherModel",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Provider = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Name = table.Column<string>(type: "TEXT", nullable: true),
+                    Provider = table.Column<string>(type: "TEXT", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    IsActive = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -46,24 +46,24 @@ namespace WeatherForecastv2.Migrations
                 name: "Forecast",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    LocationId = table.Column<int>(type: "int", nullable: false),
-                    FetchDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ValidDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    WeatherModelId = table.Column<int>(type: "int", nullable: false),
-                    Temperature2m = table.Column<double>(type: "float(5)", precision: 5, scale: 2, nullable: false),
-                    ApparentTemperature = table.Column<double>(type: "float(5)", precision: 5, scale: 2, nullable: false),
-                    Precipitation = table.Column<double>(type: "float(5)", precision: 5, scale: 2, nullable: false),
-                    PrecipitationType = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    PrecipitationProbability = table.Column<int>(type: "int", nullable: false),
-                    WindSpeed10m = table.Column<double>(type: "float(5)", precision: 5, scale: 2, nullable: false),
-                    Humidity2m = table.Column<double>(type: "float(5)", precision: 5, scale: 2, nullable: false),
-                    PressureSurface = table.Column<double>(type: "float(8)", precision: 8, scale: 2, nullable: false),
-                    CloudCover = table.Column<int>(type: "int", nullable: false),
-                    Visibility = table.Column<double>(type: "float(8)", precision: 8, scale: 2, nullable: false),
-                    UvIndex = table.Column<int>(type: "int", nullable: false),
-                    LocationId1 = table.Column<int>(type: "int", nullable: true)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    LocationId = table.Column<int>(type: "INTEGER", nullable: false),
+                    FetchDate = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    ValidDate = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    WeatherModelId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Temperature2m = table.Column<double>(type: "REAL", precision: 5, scale: 2, nullable: false),
+                    ApparentTemperature = table.Column<double>(type: "REAL", precision: 5, scale: 2, nullable: false),
+                    Precipitation = table.Column<double>(type: "REAL", precision: 5, scale: 2, nullable: false),
+                    PrecipitationType = table.Column<string>(type: "TEXT", nullable: true),
+                    PrecipitationProbability = table.Column<int>(type: "INTEGER", nullable: false),
+                    WindSpeed10m = table.Column<double>(type: "REAL", precision: 5, scale: 2, nullable: false),
+                    Humidity2m = table.Column<double>(type: "REAL", precision: 5, scale: 2, nullable: false),
+                    PressureSurface = table.Column<double>(type: "REAL", precision: 8, scale: 2, nullable: false),
+                    CloudCover = table.Column<int>(type: "INTEGER", nullable: false),
+                    Visibility = table.Column<double>(type: "REAL", precision: 8, scale: 2, nullable: false),
+                    UvIndex = table.Column<int>(type: "INTEGER", nullable: false),
+                    LocationId1 = table.Column<int>(type: "INTEGER", nullable: true)
                 },
                 constraints: table =>
                 {

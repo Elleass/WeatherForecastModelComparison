@@ -20,11 +20,9 @@ namespace WeatherForecastv2
                ========================= */
 
             builder.Services.AddDbContext<WeatherForecastContext>(options =>
-                options.UseSqlServer(
+                options.UseSqlite(
                     builder.Configuration.GetConnectionString("WeatherForecastContext")
-                    ?? throw new InvalidOperationException("Connection string not found.")
-                )
-            );
+                ));
 
             builder.Services.AddHttpClient<IGeocodingService, GeoService>();
             builder.Services.AddHttpClient();
