@@ -6,7 +6,7 @@ namespace WeatherForecastv2.Services
 {
     public interface IGeocodingService
     {
-        Task<(double lat, double lng)> GetCoordinatesAsync(string city);
+        Task<(double lat, double lng)?> GetCoordinatesAsync(string city);
     }
 
     public class GeoService : IGeocodingService
@@ -21,48 +21,65 @@ namespace WeatherForecastv2.Services
             _context = context;
         }
 
-        public async Task<(double lat, double lng)> GetCoordinatesAsync(string city)
+        public async Task<(double lat, double lng)?> GetCoordinatesAsync(string city)
         {
-            // Ensure city is not null/empty
             if (string.IsNullOrWhiteSpace(city))
-                throw new ArgumentException("City must be provided", nameof(city));
+                return null;
 
+            city = city.Trim();
+
+            // 1️⃣ Check DB
             var location = await _context.Location
-                .FirstOrDefaultAsync(b => b.Name == city);
+                .FirstOrDefaultAsync(l => l.Name == city);
 
-            if (location == null)
+            if (location != null)
             {
-                // encode city name
-                var encodedCity = Uri.EscapeDataString(city);
-
-                // Open-Meteo geocoding API (no API key)
-                string baseUrl = $"https://geocoding-api.open-meteo.com/v1/search?name={encodedCity}&count=1&language=en&format=json";
-
-                var response = await _httpClient.GetFromJsonAsync<OpenMeteoResponse>(baseUrl);
-
-                if (response?.Results?.Count > 0)
-                {
-                    var r = response.Results[0];
-
-                    var newLocation = new WeatherForecastv2.Models.Location
-                    {
-                        Name = city,
-                        Latitude = r.Latitude,
-                        Longitude = r.Longitude
-                    };
-
-                    _context.Location.Add(newLocation);
-                    await _context.SaveChangesAsync();
-
-                    return (r.Latitude, r.Longitude);
-                }
-
-                throw new Exception($"Coordinates not found for the given city: {city}");
+                return (
+                    Math.Round(location.Latitude, 2),
+                    Math.Round(location.Longitude, 2)
+                );
             }
 
+            // 2️⃣ Fetch from external API
+            var encodedCity = Uri.EscapeDataString(city);
+            var url =
+                $"https://geocoding-api.open-meteo.com/v1/search?name={encodedCity}&count=1&language=en&format=json";
 
-            return (Math.Round(location.Latitude, 2), Math.Round(location.Longitude, 2));
+            OpenMeteoResponse? response;
+
+            try
+            {
+                response = await _httpClient.GetFromJsonAsync<OpenMeteoResponse>(url);
+            }
+            catch (HttpRequestException)
+            {
+                return null;
+            }
+
+            if (response?.Results?.Count > 0)
+            {
+                var r = response.Results[0];
+
+                var newLocation = new Models.Location
+                {
+                    Name = city,
+                    Latitude = r.Latitude,
+                    Longitude = r.Longitude
+                };
+
+                _context.Location.Add(newLocation);
+                await _context.SaveChangesAsync();
+
+                return (
+                    Math.Round(r.Latitude, 2),
+                    Math.Round(r.Longitude, 2)
+                );
+            }
+
+            // 3️⃣ City not found anywhere
+            return null;
         }
+
 
         // Models for the Open-Meteo response
         public class OpenMeteoResponse

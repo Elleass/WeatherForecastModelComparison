@@ -50,7 +50,14 @@ namespace WeatherForecastv2.Services
             _logger.LogInformation($"Fetching forecast for city: {city}");
 
             //Step 1: Get Coordinates (handles location caching automatically)
-            var (latRaw, lngRaw) = await _geoService.GetCoordinatesAsync(city);
+
+            var coords = await _geoService.GetCoordinatesAsync(city);
+
+            if (coords == null)
+            {
+                return null;
+            }
+            var (latRaw, lngRaw) = coords.Value; 
             var lat = Math.Round(latRaw, 5);
             var lng = Math.Round(lngRaw, 5);
 
