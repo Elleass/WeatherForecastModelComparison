@@ -1,0 +1,19 @@
+﻿using System.Text.Json.Serialization;
+
+namespace WeatherForecast.Domain.Entities
+{
+    public class WeatherModel
+    {
+
+        public int Id { get; set; }
+        public string? Name { get; set; }
+        public string? Provider { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public bool IsActive { get; set; } = true;
+
+        // Navigation property
+
+        [JsonIgnore]
+        public ICollection<Forecast> Forecasts { get; set; } = new List<Forecast>();
+    }
+}
