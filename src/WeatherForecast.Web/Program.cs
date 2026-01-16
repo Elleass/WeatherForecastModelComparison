@@ -1,41 +1,76 @@
+using WeatherForecast.Application;
+using WeatherForecast.Infrastructure;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+// SERVICES REGISTRATION
+
+// Clean Architecture layers (u¿ywamy extension methods)
+builder.Services.AddApplication();      // Facade + Handlers
+builder.Services.AddInfrastructure(builder.Configuration);  // Repositories + External APIs
+
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+// CORS - dla frontendu (localhost: 5173)
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
+// RATE LIMITING - ochrona API
+builder.Services.AddRateLimiter(options =>
+{
+    // Ogólny limit - 60 req/min
+    options.AddFixedWindowLimiter("api", limiter =>
+    {
+        limiter.Window = TimeSpan.FromMinutes(1);
+        limiter.PermitLimit = 60;
+        limiter.QueueLimit = 0;
+    });
+
+    // Bardziej restrykcyjny dla endpointów z external API
+    options.AddFixedWindowLimiter("forecast", limiter =>
+    {
+        limiter.Window = TimeSpan.FromMinutes(1);
+        limiter.PermitLimit = 10;  // Tylko 10 req/min (ochrona limitu Open-Meteo)
+        limiter.QueueLimit = 0;
+    });
+
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// DATABASE INITIALIZATION (migracje + seed)
+using (var scope = app.Services.CreateScope())
+{
+    await WeatherForecast.Infrastructure.DependencyInjection
+        .InitializeDatabaseAsync(scope.ServiceProvider);
+}
+
+// MIDDLEWARE PIPELINE
+
+
+// Swagger (tylko w development)
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();
-
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+app.UseCors("AllowFrontend");
+app.UseRateLimiter();
+app.UseAuthorization();
+app.MapControllers();
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}

@@ -8,6 +8,6 @@ namespace WeatherForecast.Domain.Entities
         public double Latitude { get; set; }
         public double Longitude { get; set; }
 
-        public ICollection<Entities.Forecast>? Forecasts { get; set; }
+        public ICollection<Forecast>? Forecasts { get; set; }
     }
 }

@@ -1,26 +1,15 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-
-namespace WeatherForecast.Domain.Entities  // ← ZMIANA namespace
+﻿namespace WeatherForecast.Application.Forecast.DTOs
 {
-    public class Forecast
+    public class ForecastDto
     {
         public int Id { get; set; }
         public int LocationId { get; set; }
-
-        [ForeignKey(nameof(LocationId))]
-        public Location Location { get; set; } = null!;
-
-        [DataType(DataType.DateTime)]
-        public DateTime FetchDate { get; set; }
-
-        [DataType(DataType.DateTime)]
-        public DateTime ValidDate { get; set; }
-
+        public string? LocationName { get; set; }
         public int WeatherModelId { get; set; }
+        public string? ModelName { get; set; }
 
-        [ForeignKey(nameof(WeatherModelId))]
-        public WeatherModel WeatherModel { get; set; } = null!;
+        public DateTime FetchDate { get; set; }
+        public DateTime ValidDate { get; set; }
 
         public double Temperature2m { get; set; }
         public double ApparentTemperature { get; set; }
