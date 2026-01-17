@@ -39,6 +39,11 @@ Projekt implementuje **Clean Architecture** z podziałem na 4 warstwy:
 
 Zależności płyną jednokierunkowo:  Web → Application → Infrastructure → Domain
 
+## DIAGRAM UML
+
+<img width="2000" height="1000" alt="UMLchart" src="https://github.com/user-attachments/assets/ef556eac-988d-471a-a21e-3f960af28838" />
+
+
 
 ## ARCHITEKTURA SYSTEMU
 
